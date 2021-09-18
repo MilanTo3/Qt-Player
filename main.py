@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QLabel, \
     QSlider, QStyle, QSizePolicy, QFileDialog, QMenuBar, QAction
-import sys
+import sys, math
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtGui import QIcon, QPalette
@@ -48,10 +48,6 @@ class Window(QWidget):
 
         videowidget = QVideoWidget()
 
-        # create open button
-        openBtn = QPushButton('Open Video')
-        openBtn.clicked.connect(self.open_file)
-
         # create button for playing
         self.playBtn = QPushButton()
         self.playBtn.setEnabled(False)
@@ -65,21 +61,34 @@ class Window(QWidget):
         self.volumeSlider = QSlider(Qt.Horizontal)
         self.volumeSlider.setRange(0, 100)
         self.volumeSlider.sliderMoved.connect(self.volumeChanged)
+        self.volumeSlider.sliderPressed.connect(self.volumeSliderClicked)
+        self.volumeSlider.sliderReleased.connect(self.volumeSliderLetGoOff)
         self.volumeSlider.setMaximumWidth(44)
 
         # create label
         self.label = QLabel()
         self.label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
+        self.durationLabel = QLabel()
+        self.volumeLabel = QLabel()
+        self.volumeLabel.setVisible(False)
+
+        self.durationLabel.setText("")
+        self.durationLabel.setStyleSheet("QLabel { color : white; }")
+        self.volumeLabel.setStyleSheet("QLabel { color : white; }")
+        self.durationLabel.setMaximumHeight(17)
+        self.volumeLabel.setMaximumHeight(18)
+        self.volumeChanged(100)
 
         # create hbox layout
         hboxLayout = QHBoxLayout()
         hboxLayout.setContentsMargins(0, 0, 0, 0)
 
         # set widgets to the hbox layout
-        hboxLayout.addWidget(openBtn)
         hboxLayout.addWidget(self.playBtn)
         hboxLayout.addWidget(self.slider)
+        hboxLayout.addWidget(self.durationLabel)
         hboxLayout.addWidget(self.volumeSlider)
+        hboxLayout.addWidget(self.volumeLabel)
 
         # create vbox layout
         vboxLayout = QVBoxLayout()
@@ -121,8 +130,36 @@ class Window(QWidget):
             self.playBtn.setIcon(
                 self.style().standardIcon(QStyle.SP_MediaPlay))
 
+    def volumeSliderClicked(self):
+        self.volumeLabel.setVisible(True)
+
+    def volumeSliderLetGoOff(self):
+        self.volumeLabel.setVisible(False)
+
     def position_changed(self, position):
         self.slider.setValue(position)
+        result = round(position / 1000)
+        self.durationLabel.setText(self.getDurationString(result))
+
+    def getDurationString(self, seconds):
+
+        sec = seconds % 60
+        secStr = str(sec)
+        if sec < 10:
+            secStr = "0" + secStr
+
+        min = math.floor(seconds / 60)
+        min = min % 60
+        minstring = str(min)
+        if min < 10:
+            minstring = "0" + minstring
+
+        hours = math.floor(seconds / 3600)
+        hoursStr = str(hours)
+        if hours < 10:
+            hoursStr = "0" + hoursStr
+
+        return hoursStr + ":" + minstring + ":" + secStr
 
     def duration_changed(self, duration):
         self.slider.setRange(0, duration)
@@ -130,6 +167,7 @@ class Window(QWidget):
     def volumeChanged(self, position):
         self.volumeSlider.setValue(position)
         self.mediaPlayer.setVolume(position)
+        self.volumeLabel.setText(str(position) + "%")
 
     def set_position(self, position):
         self.mediaPlayer.setPosition(position)
