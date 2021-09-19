@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QLabel, \
-    QSlider, QStyle, QSizePolicy, QFileDialog, QMenuBar, QAction
-import sys, math
+    QSlider, QStyle, QSizePolicy, QFileDialog, QMenuBar, QAction, QErrorMessage, QMessageBox
+import sys, math, srt
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtGui import QIcon, QPalette
@@ -14,6 +14,7 @@ class Window(QWidget):
         self.setWindowTitle("PyQt5 Media Player")
         self.setGeometry(350, 100, 700, 500)
         self.setWindowIcon(QIcon('player.png'))
+        self.setWindowFlag(Qt.FramelessWindowHint)
 
         p = self.palette()
         p.setColor(QPalette.Window, Qt.black)
@@ -31,18 +32,30 @@ class Window(QWidget):
         self.menuBar = QMenuBar()
         self.menuBar.setMaximumHeight(22)
         fileMenu = self.menuBar.addMenu("File")
+        viewMenu = self.menuBar.addMenu("View")
         editMenu = self.menuBar.addMenu("Edit")
+        self.fullscreenVar = False
 
         self.playPauseAction = QAction("Play", self)
         openFileAction = QAction("Open file", self)
         exitAction = QAction("Exit", self)
+        self.toggleFullscreenAction = QAction("Fullscreen", self)
+        subtitlesAction = QAction("Add subtitles", self)
         openFileAction.setShortcut("Ctrl+O")
         openFileAction.setShortcut("Ctrl+E")
+        self.toggleFullscreenAction.setShortcut("Ctrl+F")
+        subtitlesAction.setShortcut("Ctrl+A")
         fileMenu.addAction(openFileAction)
         fileMenu.addAction(self.playPauseAction)
+        viewMenu.addAction(self.toggleFullscreenAction)
+        viewMenu.addAction(subtitlesAction)
         fileMenu.addAction(exitAction)
         openFileAction.triggered.connect(self.open_file)
         self.playPauseAction.triggered.connect(self.play_video)
+        self.toggleFullscreenAction.triggered.connect(self.toggleFullscreen)
+        exitAction.triggered.connect(self.quitApplication)
+        subtitlesAction.triggered.connect(self.addSubtitles)
+        self.subtitles = []
 
         # create videowidget object
 
@@ -63,7 +76,7 @@ class Window(QWidget):
         self.volumeSlider.sliderMoved.connect(self.volumeChanged)
         self.volumeSlider.sliderPressed.connect(self.volumeSliderClicked)
         self.volumeSlider.sliderReleased.connect(self.volumeSliderLetGoOff)
-        self.volumeSlider.setMaximumWidth(44)
+        self.volumeSlider.setMaximumWidth(63)
 
         # create label
         self.label = QLabel()
@@ -71,6 +84,8 @@ class Window(QWidget):
         self.durationLabel = QLabel()
         self.volumeLabel = QLabel()
         self.volumeLabel.setVisible(False)
+        self.subTiTlesLabel = QLabel()
+        self.subTiTlesLabel.setMaximumHeight(24)
 
         self.durationLabel.setText("")
         self.durationLabel.setStyleSheet("QLabel { color : white; }")
@@ -94,6 +109,7 @@ class Window(QWidget):
         vboxLayout = QVBoxLayout()
         vboxLayout.addWidget(self.menuBar)
         vboxLayout.addWidget(videowidget)
+        vboxLayout.addWidget(self.subTiTlesLabel)
         vboxLayout.addLayout(hboxLayout)
         vboxLayout.addWidget(self.label)
 
@@ -129,6 +145,29 @@ class Window(QWidget):
         else:
             self.playBtn.setIcon(
                 self.style().standardIcon(QStyle.SP_MediaPlay))
+
+    def toggleFullscreen(self):
+        if self.fullscreenVar == False:
+            self.showFullScreen()
+            self.fullscreenVar = True
+            self.toggleFullscreenAction.setText("Exit fullscreen")
+        else:
+            self.showNormal()
+            self.fullscreenVar = False
+            self.toggleFullscreenAction.setText("Fullscreen")
+
+    def addSubtitles(self):
+        filename, _ = QFileDialog.getOpenFileName(self, "Add subtitle")
+
+        if filename != '':
+            try:
+                self.subtitles = list(srt.parse(QUrl.fromLocalFile(filename)))
+            except:
+                msgBox = QMessageBox()
+                msgBox.setIcon(QMessageBox.Information)
+                msgBox.setText("Error.")
+                msgBox.setWindowTitle("Sowie, couldn't load the subtitles.")
+                msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
 
     def volumeSliderClicked(self):
         self.volumeLabel.setVisible(True)
@@ -171,6 +210,9 @@ class Window(QWidget):
 
     def set_position(self, position):
         self.mediaPlayer.setPosition(position)
+
+    def quitApplication(self):
+        sys.exit(app.exec_())
 
     def handle_errors(self):
         self.playBtn.setEnabled(False)
