@@ -1,9 +1,9 @@
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QLabel, \
-    QSlider, QStyle, QSizePolicy, QFileDialog, QMenuBar, QAction, QErrorMessage, QMessageBox
+    QSlider, QStyle, QSizePolicy, QFileDialog, QMenuBar, QAction, QErrorMessage, QMessageBox, QMainWindow, QStackedWidget
 import sys, math, srt
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtMultimediaWidgets import QVideoWidget
-from PyQt5.QtGui import QIcon, QPalette
+from PyQt5.QtGui import QIcon, QPalette, QFont, QColor
 from PyQt5.QtCore import Qt, QUrl
 
 
@@ -18,6 +18,7 @@ class Window(QWidget):
 
         p = self.palette()
         p.setColor(QPalette.Window, Qt.black)
+
         self.setPalette(p)
 
         self.init_ui()
@@ -55,11 +56,13 @@ class Window(QWidget):
         self.toggleFullscreenAction.triggered.connect(self.toggleFullscreen)
         exitAction.triggered.connect(self.quitApplication)
         subtitlesAction.triggered.connect(self.addSubtitles)
-        self.subtitles = []
 
         # create videowidget object
 
+        container = QWidget()
         videowidget = QVideoWidget()
+        lay = QVBoxLayout(container)
+        lay.addWidget(videowidget)
 
         # create button for playing
         self.playBtn = QPushButton()
@@ -84,9 +87,15 @@ class Window(QWidget):
         self.durationLabel = QLabel()
         self.volumeLabel = QLabel()
         self.volumeLabel.setVisible(False)
-        self.subTiTlesLabel = QLabel()
-        self.subTiTlesLabel.setMaximumHeight(24)
+        self.subTiTlesLabel = QLabel("", container)
+        self.subTiTlesLabel.setFont(QFont("Arial", 22))
+        self.subTitlesOn = False
 
+        sample_palette = QPalette()
+        sample_palette.setColor(QPalette.WindowText, Qt.white)
+
+        self.subTiTlesLabel.setPalette(sample_palette)
+        self.subTiTlesLabel.setAlignment(Qt.AlignHCenter)
         self.durationLabel.setText("")
         self.durationLabel.setStyleSheet("QLabel { color : white; }")
         self.volumeLabel.setStyleSheet("QLabel { color : white; }")
@@ -108,10 +117,10 @@ class Window(QWidget):
         # create vbox layout
         vboxLayout = QVBoxLayout()
         vboxLayout.addWidget(self.menuBar)
-        vboxLayout.addWidget(videowidget)
-        vboxLayout.addWidget(self.subTiTlesLabel)
+        vboxLayout.addWidget(container)
         vboxLayout.addLayout(hboxLayout)
         vboxLayout.addWidget(self.label)
+        vboxLayout.setAlignment(Qt.AlignHCenter)
 
         self.setLayout(vboxLayout)
 
@@ -157,17 +166,24 @@ class Window(QWidget):
             self.toggleFullscreenAction.setText("Fullscreen")
 
     def addSubtitles(self):
+
         filename, _ = QFileDialog.getOpenFileName(self, "Add subtitle")
 
         if filename != '':
             try:
-                self.subtitles = list(srt.parse(QUrl.fromLocalFile(filename)))
+
+                with open(filename) as f:
+                    lines = f.readlines()
+                    lines = ''.join(map(str, lines))
+                    self.subtitles = list(srt.parse(lines))
+                    self.subTitlesOn = True
             except:
                 msgBox = QMessageBox()
                 msgBox.setIcon(QMessageBox.Information)
                 msgBox.setText("Error.")
                 msgBox.setWindowTitle("Sowie, couldn't load the subtitles.")
                 msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+                msgBox.show()
 
     def volumeSliderClicked(self):
         self.volumeLabel.setVisible(True)
@@ -179,6 +195,33 @@ class Window(QWidget):
         self.slider.setValue(position)
         result = round(position / 1000)
         self.durationLabel.setText(self.getDurationString(result))
+        if self.subTitlesOn:
+            self.displaySubs(position)
+
+    def displaySubs(self, timeposition):
+
+        x : srt.Subtitle
+        subtitle = self.findSubtitle(timeposition)
+
+        if hasattr(subtitle, "content"):
+            self.subTiTlesLabel.show()
+            self.subTiTlesLabel.setText(subtitle.content)
+            self.subTiTlesLabel.adjustSize()
+            movecoef = (self.width() - self.subTiTlesLabel.width()) / 2
+            self.subTiTlesLabel.setGeometry(int(movecoef), self.height() - 200, self.subTiTlesLabel.width(), self.subTiTlesLabel.height())
+
+        else:
+            self.subTiTlesLabel.hide()
+
+
+    def findSubtitle(self, timeposition):
+
+        x : srt.Subtitle
+        for x in self.subtitles:
+            if (((x.start.seconds * 1000 + (x.start.microseconds / 1000)) <= timeposition) and ((x.end.seconds * 1000 + (x.end.microseconds / 1000)) >= timeposition)):
+                return x
+
+        return -1
 
     def getDurationString(self, seconds):
 
