@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QSlider, QStyle, QColorDialog, QFontDialog, QPushButton, QDialog
-from PyQt5.QtGui import QColor, QFontInfo, QFont
+from PyQt5.QtGui import QColor, QFontInfo, QFont, QPalette
 from PyQt5.QtCore import Qt
 
 class SubtitleSettings(QDialog):
@@ -12,6 +12,10 @@ class SubtitleSettings(QDialog):
         self.font = -1
         self.acceptChangesVariable = False
         self.label : QLabel = label
+        p = QPalette()
+        p.setColor(QPalette.Window, QColor("#FF69B4"))
+        p.setColor(QPalette.WindowText, Qt.white)
+        self.setPalette(p)
         self.initUI()
         self.show()
 
@@ -54,7 +58,7 @@ class SubtitleSettings(QDialog):
 
     def set_background_color(self):
         self.backgroundcolor = QColorDialog.getColor()
-        self.testText.setStyleSheet("QLabel { background-color: %s }" % self.backgroundcolor.name())
+        self.testText.setStyleSheet("QLabel { background-color: %s; font-weight: bold; }" % self.backgroundcolor.name())
 
     def set_font(self):
         font, valid = QFontDialog.getFont()

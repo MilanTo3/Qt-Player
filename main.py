@@ -4,10 +4,10 @@ import sys, math, srt
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtGui import QIcon, QPalette, QFont, QColor, QResizeEvent, QMouseEvent
-from PyQt5.QtCore import Qt, QUrl, QPoint, QPropertyAnimation, QEasingCurve
+from PyQt5.QtCore import Qt, QUrl, QPoint, QPropertyAnimation, QEasingCurve, pyqtSlot
 from CustomWidgets.SubtitleSettings import SubtitleSettings
 from CustomWidgets.SearchSubtitlesOnline import SearchSubtitlesOnline
-
+from CustomWidgets.SliderTimebar import SliderTimebar
 
 class Window(QWidget):
     def __init__(self):
@@ -132,9 +132,10 @@ class Window(QWidget):
         self.forwardBtn.clicked.connect(self.jumpForward10Sec)
 
         # create slider
-        self.slider = QSlider(Qt.Horizontal)
+        self.slider = SliderTimebar(Qt.Horizontal)
         self.slider.setRange(0, 0)
         self.slider.sliderMoved.connect(self.set_position)
+        self.slider.signal.connect(self.jumpPosition)
         self.volumeSlider = QSlider(Qt.Horizontal)
         self.volumeSlider.setRange(0, 100)
         self.volumeSlider.sliderMoved.connect(self.volumeChanged)
@@ -182,14 +183,20 @@ class Window(QWidget):
         hboxLayout2.setAlignment(Qt.AlignHCenter)
 
         # create vbox layout
+        carrier = QMenuBar()
+        carrier.setFixedHeight(1)
+        carrier.setStyleSheet("QMenuBar{ background: black; }")
+        MenuBarLayout = QVBoxLayout()
+        MenuBarLayout.addWidget(carrier)
+        MenuBarLayout.addWidget(self.menuBar)
+        MenuBarLayout.setSpacing(0)
         vboxLayout2 = QVBoxLayout()
-        vboxLayout2.addWidget(self.menuBar)
+        vboxLayout2.addLayout(MenuBarLayout)
         vboxLayout2.addWidget(container)
         vboxLayout2.addLayout(self.vboxLayout1)
         vboxLayout2.setAlignment(Qt.AlignHCenter)
         hboxLayout2.setContentsMargins(0, 0, 0, 12)
         hboxLayout2.setSpacing(7)
-
         self.setLayout(vboxLayout2)
 
         self.mediaPlayer.setVideoOutput(videowidget)
@@ -210,6 +217,7 @@ class Window(QWidget):
                 self.hideControlBar()
 
     def open_file(self):
+
         filename, _ = QFileDialog.getOpenFileName(self, "Open Video")
 
         if filename != '':
@@ -233,14 +241,18 @@ class Window(QWidget):
     def volumeIncrease(self):
         if self.mediaPlayer.volume() <= 90:
             self.mediaPlayer.setVolume(self.mediaPlayer.volume() + 10)
+            self.volumeSlider.setSliderPosition(self.mediaPlayer.volume())
         elif self.mediaPlayer.volume() > 90 and self.mediaPlayer.volume() < 100:
             self.mediaPlayer.setVolume(100)
+            self.volumeSlider.setSliderPosition(self.mediaPlayer.volume())
 
     def volumeDecrease(self):
-        if self.mediaPlayer.volume >= 10:
+        if self.mediaPlayer.volume() >= 10:
             self.mediaPlayer.setVolume(self.mediaPlayer.volume() - 10)
+            self.volumeSlider.setSliderPosition(self.mediaPlayer.volume())
         elif self.mediaPlayer.volume() < 10 and self.mediaPlayer.volume() > 0:
             self.mediaPlayer.setVolume(0)
+            self.volumeSlider.setSliderPosition(self.mediaPlayer.volume())
 
     def volumeMute(self):
 
@@ -318,37 +330,6 @@ class Window(QWidget):
 
     def setStyling(self):
 
-        self.slider.setStyleSheet("""
-
-                            QSlider{ max-height: 17px; }
-                            QSlider::groove:horizontal {
-                                background: white;
-                            }
-
-                            QSlider::sub-page:horizontal {
-                                background: qlineargradient(x1: 0, y1: 0,    x2: 0, y2: 1,
-                                    stop: 0 #FFC0CB, stop: 1 #FF69B4);
-                            }
-
-                            QSlider::add-page:horizontal {
-                                background: #fff;
-                            }
-
-                            QSlider::handle:horizontal {
-                                background: #FF1493;
-                                border: 4px solid red; 
-                                border-color: #FF1493;
-                                width: 10px;
-                                margin-top: 0px;
-                                margin-bottom: 0px;
-                            }
-
-                            QSlider::handle:horizontal:hover {
-                	            border-radius: 4px;
-
-                            }
-                        """)
-
         self.volumeSlider.setStyleSheet("""
         
                         QSlider{
@@ -401,7 +382,7 @@ class Window(QWidget):
                                                  border-radius: 21px;
                                                  min-width: 34px;
                                                  min-height: 34px;
-                                                 border-color: #2752B7; }""")
+                                                 border-color: #FF1493; }""")
 
         self.backBtn.setStyleSheet("""QPushButton{ color: white; background-color: #FF69B4; border-style: outset;
                                                  padding: 3px;
@@ -410,7 +391,7 @@ class Window(QWidget):
                                                  border-radius: 12px;
                                                  min-width: 21px;
                                                  min-height: 21px;
-                                                 border-color: #2752B7; }""")
+                                                 border-color: #FF1493; }""")
 
         self.forwardBtn.setStyleSheet("""QPushButton{ color: white; background-color: #FF69B4; border-style: outset;
                                                  padding: 3px;
@@ -419,7 +400,7 @@ class Window(QWidget):
                                                  border-radius: 12px;
                                                  min-width: 21px;
                                                  min-height: 21px;
-                                                 border-color: #2752B7; }""")
+                                                 border-color: #FF1493; }""")
 
     def mediastate_changed(self, state):
         if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
@@ -440,20 +421,25 @@ class Window(QWidget):
             self.toggleFullscreenAction.setText("Fullscreen")
 
     def hideControlBar(self):
-        for i in range(self.vboxLayout1.count()):
-            item = self.vboxLayout1.itemAt(i)
-            for k in range(item.count()):
-                widget = item.itemAt(k).widget()
-                widget.hide()
 
+        self.slider.hide()
+        self.durationLabel.hide()
+        self.volumeSlider.hide()
+        self.volumeLabel.hide()
+        self.backBtn.hide()
+        self.playBtn.hide()
+        self.forwardBtn.hide()
         self.menuBar.hide()
 
     def showControlBar(self):
-        for i in range(self.vboxLayout1.count()):
-            item = self.vboxLayout1.itemAt(i)
-            for k in range(item.count()):
-                widget = item.itemAt(k).widget()
-                widget.show()
+
+        self.slider.show()
+        self.durationLabel.show()
+        self.volumeSlider.show()
+        self.volumeLabel.show()
+        self.backBtn.show()
+        self.playBtn.show()
+        self.forwardBtn.show()
         self.menuBar.show()
 
     def addSubtitles(self):
@@ -484,6 +470,14 @@ class Window(QWidget):
 
     def position_changed(self, position):
         self.slider.setValue(position)
+        result = round(position / 1000)
+        self.durationLabel.setText(self.getDurationString(result))
+        if self.subTitlesOn:
+            self.displaySubs(position)
+
+    @pyqtSlot('qint64')
+    def jumpPosition(self, position):
+        self.set_position(position)
         result = round(position / 1000)
         self.durationLabel.setText(self.getDurationString(result))
         if self.subTitlesOn:

@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLab
 from bs4 import BeautifulSoup, PageElement
 import requests, re, os
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPalette, QColor
 
 class SearchSubtitlesOnline(QDialog):
 
@@ -67,6 +68,10 @@ class SearchSubtitlesOnline(QDialog):
 
     def initUI(self):
 
+        p = QPalette()
+        p.setColor(QPalette.Window, QColor("#FF69B4"))
+        p.setColor(QPalette.WindowText, Qt.white)
+        self.setPalette(p)
         self.vbox = QVBoxLayout()
         self.hbox1 = QHBoxLayout()
         self.hbox2 = QHBoxLayout()
@@ -104,6 +109,8 @@ class SearchSubtitlesOnline(QDialog):
         self.downloadSelectionBtn.clicked.connect(self.startDownload)
         self.downloaddIRPATH.clicked.connect(self.setDirectoryPath)
         self.setLayout(self.vbox)
+        self.setStyleSheet("QLabel{ font-weight: bold; color: white; }")
+        self.table.setStyleSheet("QTableWidget{ font-weight: bold; }")
 
     def drawProcessedEntries(self):
 
