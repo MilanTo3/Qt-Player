@@ -13,6 +13,7 @@ class SearchSubtitlesOnline(QDialog):
     def startSearching(self):
 
         if self.edit.text() == "":
+            self.statusLabel.setText("Please specify a search term.")
             return
 
         self.mediaName : str = self.edit.text().replace(" ", "%")
@@ -22,7 +23,12 @@ class SearchSubtitlesOnline(QDialog):
         if self.plaintext == "":
             self.close()
         self.soup = BeautifulSoup(self.plaintext)
-        self.numOfPages = len(self.soup.find("ul", { "class": "pagination pagination-right" }).find_all("li")) - 2
+        try:
+            self.numOfPages = len(self.soup.find("ul", { "class": "pagination pagination-right" }).find_all("li")) - 2
+        except:
+            self.statusLabel.setText("No subtitles found.")
+            return
+
         self.colheaders = []
         self.rowEntries = []
         self.processedEntries : [EntryClass] = []

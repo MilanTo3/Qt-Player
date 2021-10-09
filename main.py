@@ -4,7 +4,7 @@ import sys, math, srt
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtGui import QIcon, QPalette, QFont, QColor, QResizeEvent, QMouseEvent
-from PyQt5.QtCore import Qt, QUrl, QPoint, QPropertyAnimation, QEasingCurve, pyqtSlot
+from PyQt5.QtCore import Qt, QUrl, QPoint, QPropertyAnimation, pyqtSlot
 from CustomWidgets.SubtitleSettings import SubtitleSettings
 from CustomWidgets.SearchSubtitlesOnline import SearchSubtitlesOnline
 from CustomWidgets.SliderTimebar import SliderTimebar
