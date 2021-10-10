@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QSlider, QStyle, QColorDialog, QFontDialog, QPushButton, QDialog
 from PyQt5.QtGui import QColor, QFontInfo, QFont, QPalette
 from PyQt5.QtCore import Qt
+from CustomWidgets.StyledButton import StyledButton
 
 class SubtitleSettings(QDialog):
 
@@ -25,11 +26,11 @@ class SubtitleSettings(QDialog):
         self.testText.setStyleSheet(self.label.styleSheet())
         self.testText.setFont(self.label.font())
         self.testText.setPalette(self.label.palette())
-        self.textColorBtn = QPushButton("Change text color")
-        self.backgroundColorBtn = QPushButton("Change background color")
-        self.fontBtn = QPushButton("Change font")
-        self.acceptBtn = QPushButton("Accept")
-        self.cancelBtn = QPushButton("Cancel")
+        self.textColorBtn = StyledButton("Change text color")
+        self.backgroundColorBtn = StyledButton("Change background color")
+        self.fontBtn = StyledButton("Change font")
+        self.acceptBtn = StyledButton("Accept")
+        self.cancelBtn = StyledButton("Cancel")
         vbox = QVBoxLayout()
         hbox = QHBoxLayout()
         hboxControlButtons = QHBoxLayout()

@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup, PageElement
 import requests, re, os
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPalette, QColor
+from CustomWidgets.StyledButton import StyledButton
 
 class SearchSubtitlesOnline(QDialog):
 
@@ -87,10 +88,10 @@ class SearchSubtitlesOnline(QDialog):
         self.statusLabel = QLabel("Status: ")
         self.urlPath = QLabel("Url path:")
         self.url = ""
-        self.searchBtn = QPushButton("Search")
-        self.downloadSelectionBtn = QPushButton("Download checked subs")
-        self.downloaddIRPATH = QPushButton("Set download path.")
-        self.cancelBtn = QPushButton("Cancel")
+        self.searchBtn = StyledButton("Search")
+        self.downloadSelectionBtn = StyledButton("Download checked subs")
+        self.downloaddIRPATH = StyledButton("Set download path.")
+        self.cancelBtn = StyledButton("Cancel")
         self.table = QTableWidget()
         self.table.setColumnCount(9)
         self.table.setHorizontalHeaderLabels(["", "Title", "Frames per Seconds", "Language", "Author", "Num of Times Downloaded", "Grade", "Made on", "Select for download"])
